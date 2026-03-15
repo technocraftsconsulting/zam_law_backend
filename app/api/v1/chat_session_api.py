@@ -1,19 +1,15 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, Request, HTTPException
-from sqlalchemy.orm import Session
 
-from app.db.db_dependency import get_db
+from app.api.dependencies.dependencies import get_chat_session_service, get_audit_log_service
 from app.models.chat_session import ChatSessionRead, ChatSessionCreate
+from app.services.audit_log_service import AuditLogService
 from app.services.chat_session_service import ChatSessionService
 from app.utils.hashing_util import hash_ip
 from app.utils.ip_util import get_client_ip
 
 router = APIRouter()
-
-
-def get_chat_session_service(db: Session = Depends(get_db)) -> "ChatSessionService":
-    return ChatSessionService(session=db)
 
 
 @router.get("", response_model=List[ChatSessionRead])
@@ -28,10 +24,11 @@ def get_chat_sessions_with_messages(service: ChatSessionService = Depends(get_ch
 
 @router.post("", response_model=ChatSessionRead)
 def create_chat_session(request: Request, chat_session: ChatSessionCreate,
-                        service: ChatSessionService = Depends(get_chat_session_service)):
+                        service: ChatSessionService = Depends(get_chat_session_service),
+                        audit_log_service: AuditLogService = Depends(get_audit_log_service)):
     ip = get_client_ip(request)
     ip_hash = hash_ip(ip)
-    return service.create_chat_session(chat_session.jurisdiction_hint, ip_hash)
+    return service.create_chat_session(chat_session.jurisdiction_hint, ip_hash, audit_log_service)
 
 
 @router.delete("/{chat_session_id}")

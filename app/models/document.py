@@ -11,7 +11,6 @@ class DocumentCreate(BaseModel):
     citation: str
     decided_date: datetime
     is_good_law: bool
-    storage_path: str
     ingestion_status: str
     ingested_at: datetime
 

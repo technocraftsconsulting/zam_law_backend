@@ -17,4 +17,3 @@ class ChatSessionRead(BaseModel):
     ip_hash: str
     created_at: datetime
     expires_at: datetime
-    messages: Optional[List[MessageRead]]

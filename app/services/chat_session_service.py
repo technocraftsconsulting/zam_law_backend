@@ -5,6 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import ChatSession
+from app.db.schema import EventType
+from app.services.audit_log_service import AuditLogService
 from app.utils.session_util import generate_session_token
 
 
@@ -24,6 +26,7 @@ class ChatSessionService:
             self,
             jurisdiction_hint: str,
             ip_hash: str,
+            audit_log_service: AuditLogService,
             expires_at: Optional[datetime] = None,
     ) -> ChatSession:
         if expires_at is None:
@@ -41,6 +44,11 @@ class ChatSessionService:
         self._db.add(chat_session)
         self._db.commit()
         self._db.refresh(chat_session)
+
+        audit_log_service.create_audit_log(
+            event_type=EventType.SESSION_CREATED.name,
+            chat_session=chat_session
+        )
         return chat_session
 
     def delete_chat_session(self, chat_id: int) -> bool:

@@ -8,7 +8,7 @@ class AuditLogCreate(BaseModel):
     admin_id: int
     session_id: int
     event_type: str
-    entity_id: str
+    entity_id: int
     payload: List[str]
 
 

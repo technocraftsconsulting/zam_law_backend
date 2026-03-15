@@ -1,73 +1,79 @@
 import enum
+import uuid
 from datetime import datetime, timezone
 from typing import Optional, List
 
-from sqlalchemy import String, Integer, DateTime, Boolean, Enum, Text, ForeignKey, Float, BigInteger
+from sqlalchemy import String, DateTime, Boolean, Enum, Text, ForeignKey, BigInteger
 from sqlalchemy.dialects.postgresql import ARRAY, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.db import Base
 
 
+def enum_values(enum_cls: type[enum.Enum]) -> list[str]:
+    return [e.value for e in enum_cls]
+
+
 class Precedential(enum.Enum):
-    BINDING = "binding"
-    PERSUASIVE = "persuasive"
-    NON_PRECEDENTIAL = "non_precedential"
+    BINDING = "BINDING"
+    PERSUASIVE = "PERSUASIVE"
+    NON_PRECEDENTIAL = "NON_PRECEDENTIAL"
 
 
 class UserRole(enum.Enum):
-    ADMIN = "admin"
-    USER = "user"
+    ADMIN = "ADMIN"
+    USER = "USER"
 
 
 class DocType(enum.Enum):
-    PDF = "pdf"
-    DOCX = "docx"
-    CSV = "csv"
+    CASE_LAW = "CASE_LAW"
+    STATUTE = "STATUTE"
+    REGULATION = "REGULATION"
+    CONSTITUTION = "CONSTITUTION"
+    LEGAL_MEMO = "LEGAL_MEMO"
+    OTHER = "OTHER"
 
 
 class IngestionStatus(enum.Enum):
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    ERROR = "error"
+    PENDING = "PENDING"
+    FAILED = "FAILED"
+    COMPLETED = "COMPLETED"
+    ERROR = "ERROR"
 
 
 class VerificationMethod(enum.Enum):
-    EXACT_MATCH = "exact_match"
-    FUZZY_MATCH = "fuzzy_match"
-    CHUNK_LOOKUP = "chunk_lookup"
-    UNVERIFIED = "unverified"
-    MANUALLY_CONFIRMED = "manually_confirmed"
+    EXACT_MATCH = "EXACT_MATCH"
+    FUZZY_MATCH = "FUZZY_MATCH"
+    CHUNK_LOOKUP = "CHUNK_LOOKUP"
+    UNVERIFIED = "UNVERIFIED"
+    MANUALLY_CONFIRMED = "MANUALLY_CONFIRMED"
 
 
 class EventType(enum.Enum):
-    ADMIN_LOGIN = "admin_login"
-    ADMIN_LOGOUT = "admin_logout"
-    ADMIN_LOGIN_FAILED = "admin_login_failed"
-    DOCUMENT_UPLOADED = "document_uploaded"
-    DOCUMENT_UPDATED = "document_updated"
-    DOCUMENT_DELETED = "document_deleted"
-    INGESTION_STARTED = "ingestion_started"
-    INGESTION_COMPLETED = "ingestion_completed"
-    INGESTION_FAILED = "ingestion_failed"
-    SESSION_CREATED = "session_created"
-    SESSION_EXPIRED = "session_expired"
-    MESSAGE_SENT = "message_sent"
-    RAG_QUERY_COMPLETED = "rag_query_completed"
-    RAG_QUERY_FAILED = "rag_query_failed"
-    CITATION_VERIFIED = "citation_verified"
-    CITATION_FLAGGED = "citation_flagged"
-    HALLUCINATION_DETECTED = "hallucination_detected"
-    RATE_LIMIT_EXCEEDED = "rate_limit_exceeded"
+    ADMIN_LOGIN = "ADMIN_LOGIN"
+    ADMIN_LOGOUT = "ADMIN_LOGOUT"
+    ADMIN_LOGIN_FAILED = "ADMIN_LOGIN_FAILED"
+    DOCUMENT_UPLOADED = "DOCUMENT_UPLOADED"
+    DOCUMENT_UPDATED = "DOCUMENT_UPDATED"
+    DOCUMENT_DELETED = "DOCUMENT_DELETED"
+    INGESTION_STARTED = "INGESTION_STARTED"
+    INGESTION_COMPLETED = "INGESTION_COMPLETED"
+    INGESTION_FAILED = "INGESTION_FAILED"
+    SESSION_CREATED = "SESSION_CREATED"
+    SESSION_EXPIRED = "SESSION_EXPIRED"
+    MESSAGE_SENT = "MESSAGE_SENT"
+    RAG_QUERY_COMPLETED = "RAG_QUERY_COMPLETED"
+    RAG_QUERY_FAILED = "RAG_QUERY_FAILED"
+    CITATION_VERIFIED = "CITATION_VERIFIED"
+    CITATION_FLAGGED = "CITATION_FLAGGED"
+    HALLUCINATION_DETECTED = "HALLUCINATION_DETECTED"
+    RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
 
 
 class MessageRole(enum.Enum):
-    USER = "user"
-    ASSISTANT = "assistant"
+    USER = "USER"
+    ASSISTANT = "ASSISTANT"
 
-
-# ADMIN
 
 class Admin(Base):
     __tablename__ = "admins"
@@ -76,7 +82,9 @@ class Admin(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(255))
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole))
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole, values_callable=enum_values, name="userrole")
+    )
     is_active: Mapped[bool] = mapped_column(Boolean)
     last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(
@@ -87,21 +95,23 @@ class Admin(Base):
     audit_logs: Mapped[List["AuditLog"]] = relationship(back_populates="admin")
 
 
-# DOCUMENT
-
 class Document(Base):
     __tablename__ = "documents"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     uploaded_by: Mapped[int] = mapped_column(ForeignKey("admins.id"))
     title: Mapped[str] = mapped_column(String(255))
-    doc_type: Mapped[DocType] = mapped_column(Enum(DocType))
+    doc_type: Mapped[DocType] = mapped_column(
+        Enum(DocType, values_callable=enum_values, name="doctype")
+    )
     jurisdiction: Mapped[str] = mapped_column(String(255))
     citation: Mapped[Optional[str]] = mapped_column(String(255))
     decided_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
     is_good_law: Mapped[bool] = mapped_column(Boolean)
     storage_path: Mapped[str] = mapped_column(String(255))
-    ingestion_status: Mapped[IngestionStatus] = mapped_column(Enum(IngestionStatus))
+    ingestion_status: Mapped[IngestionStatus] = mapped_column(
+        Enum(IngestionStatus, values_callable=enum_values, name="ingestionstatus")
+    )
     ingested_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
@@ -110,8 +120,6 @@ class Document(Base):
     admin: Mapped["Admin"] = relationship(back_populates="documents")
     chunks: Mapped[List["DocumentChunk"]] = relationship(back_populates="document")
 
-
-# DOCUMENT CHUNK
 
 class DocumentChunk(Base):
     __tablename__ = "document_chunks"
@@ -123,7 +131,9 @@ class DocumentChunk(Base):
     text_preview: Mapped[str] = mapped_column(Text)
     section_path: Mapped[List[str]] = mapped_column(ARRAY(Text))
     is_holding: Mapped[bool] = mapped_column(Boolean)
-    precedential: Mapped[Precedential] = mapped_column(Enum(Precedential))
+    precedential: Mapped[Precedential] = mapped_column(
+        Enum(Precedential, values_callable=enum_values, name="precedential")
+    )
     prev_chunk_id: Mapped[Optional[int]] = mapped_column(ForeignKey("document_chunks.id"))
     next_chunk_id: Mapped[Optional[int]] = mapped_column(ForeignKey("document_chunks.id"))
     token_count: Mapped[int] = mapped_column()
@@ -149,8 +159,6 @@ class DocumentChunk(Base):
     citations: Mapped[List["Citation"]] = relationship(back_populates="document_chunk")
 
 
-# CHAT SESSION
-
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
@@ -168,14 +176,14 @@ class ChatSession(Base):
     audit_logs: Mapped[List["AuditLog"]] = relationship(back_populates="session")
 
 
-# MESSAGE
-
 class Message(Base):
     __tablename__ = "messages"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("chat_sessions.id"))
-    role: Mapped[MessageRole] = mapped_column(Enum(MessageRole))
+    role: Mapped[MessageRole] = mapped_column(
+        Enum(MessageRole, values_callable=enum_values, name="messagerole")
+    )
     content: Mapped[str] = mapped_column(Text)
     turn_index: Mapped[int] = mapped_column()
     created_at: Mapped[datetime] = mapped_column(
@@ -185,8 +193,6 @@ class Message(Base):
     session: Mapped["ChatSession"] = relationship(back_populates="messages")
     rag_query: Mapped[Optional["RagQuery"]] = relationship(back_populates="message")
 
-
-# RAG QUERY
 
 class RagQuery(Base):
     __tablename__ = "rag_queries"
@@ -214,8 +220,6 @@ class RagQuery(Base):
     citations: Mapped[List["Citation"]] = relationship(back_populates="rag_query")
 
 
-# RETRIEVED CHUNK
-
 class RetrievedChunk(Base):
     __tablename__ = "retrieved_chunks"
 
@@ -234,8 +238,6 @@ class RetrievedChunk(Base):
     document_chunk: Mapped["DocumentChunk"] = relationship(back_populates="retrieved_chunks")
 
 
-# CITATION
-
 class Citation(Base):
     __tablename__ = "citations"
 
@@ -245,7 +247,9 @@ class Citation(Base):
 
     raw_citation_text: Mapped[str] = mapped_column(Text)
     verified: Mapped[bool] = mapped_column(Boolean)
-    verification_method: Mapped[VerificationMethod] = mapped_column(Enum(VerificationMethod))
+    verification_method: Mapped[VerificationMethod] = mapped_column(
+        Enum(VerificationMethod, values_callable=enum_values, name="verificationmethod")
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
@@ -255,8 +259,6 @@ class Citation(Base):
     document_chunk: Mapped["DocumentChunk"] = relationship(back_populates="citations")
 
 
-# AUDIT LOG
-
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
@@ -264,8 +266,10 @@ class AuditLog(Base):
     admin_id: Mapped[Optional[int]] = mapped_column(ForeignKey("admins.id"))
     session_id: Mapped[Optional[int]] = mapped_column(ForeignKey("chat_sessions.id"))
 
-    event_type: Mapped[EventType] = mapped_column(Enum(EventType))
-    entity_id: Mapped[Optional[str]] = mapped_column(PG_UUID(as_uuid=True))
+    event_type: Mapped[EventType] = mapped_column(
+        Enum(EventType, values_callable=enum_values, name="eventtype")
+    )
+    entity_id: Mapped[Optional[uuid.UUID]] = mapped_column(PG_UUID(as_uuid=True))
     payload: Mapped[Optional[List[str]]] = mapped_column(ARRAY(Text))
 
     created_at: Mapped[datetime] = mapped_column(

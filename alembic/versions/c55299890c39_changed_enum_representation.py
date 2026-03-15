@@ -1,8 +1,8 @@
-"""initial schema
+"""Changed enum representation
 
-Revision ID: b7141c43b083
+Revision ID: c55299890c39
 Revises: 
-Create Date: 2026-03-04 19:05:38.936532
+Create Date: 2026-03-14 20:46:44.845853
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'b7141c43b083'
+revision: str = 'c55299890c39'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -63,13 +63,13 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('uploaded_by', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(length=255), nullable=False),
-    sa.Column('doc_type', sa.Enum('PDF', 'DOCX', 'CSV', name='doctype', metadata=MetaData()), nullable=False),
+    sa.Column('doc_type', sa.Enum('CASE_LAW', 'STATUTE', 'REGULATION', 'CONSTITUTION', 'LEGAL_MEMO', 'OTHER', name='doctype', metadata=MetaData()), nullable=False),
     sa.Column('jurisdiction', sa.String(length=255), nullable=False),
     sa.Column('citation', sa.String(length=255), nullable=True),
     sa.Column('decided_date', sa.DateTime(), nullable=True),
     sa.Column('is_good_law', sa.Boolean(), nullable=False),
     sa.Column('storage_path', sa.String(length=255), nullable=False),
-    sa.Column('ingestion_status', sa.Enum('PENDING', 'IN_PROGRESS', 'COMPLETED', 'ERROR', name='ingestionstatus', metadata=MetaData()), nullable=False),
+    sa.Column('ingestion_status', sa.Enum('PENDING', 'FAILED', 'COMPLETED', 'ERROR', name='ingestionstatus', metadata=MetaData()), nullable=False),
     sa.Column('ingested_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['uploaded_by'], ['admins.id'], ),
@@ -115,7 +115,7 @@ def upgrade() -> None:
     sa.Column('detected_jurisdiction', sa.String(length=255), nullable=True),
     sa.Column('retrieval_ms', sa.Integer(), nullable=False),
     sa.Column('generation_ms', sa.Integer(), nullable=False),
-    sa.Column('grounding_score', sa.Float(), nullable=False),
+    sa.Column('grounding_score', sa.Double(), nullable=False),
     sa.Column('hallucination_flags', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['message_id'], ['messages.id'], ),
@@ -141,9 +141,9 @@ def upgrade() -> None:
     sa.Column('query_id', sa.Integer(), nullable=False),
     sa.Column('chunk_id', sa.Integer(), nullable=False),
     sa.Column('rank_position', sa.Integer(), nullable=False),
-    sa.Column('dense_score', sa.Float(), nullable=False),
-    sa.Column('sparse_score', sa.Float(), nullable=False),
-    sa.Column('rerank_score', sa.Float(), nullable=False),
+    sa.Column('dense_score', sa.Double(), nullable=False),
+    sa.Column('sparse_score', sa.Double(), nullable=False),
+    sa.Column('rerank_score', sa.Double(), nullable=False),
     sa.Column('used_in_context', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['chunk_id'], ['document_chunks.id'], ),
     sa.ForeignKeyConstraint(['query_id'], ['rag_queries.id'], ),

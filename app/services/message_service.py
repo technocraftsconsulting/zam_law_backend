@@ -1,24 +1,14 @@
-from datetime import datetime, timezone
-
 from sqlalchemy import select, func
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.db import Message, ChatSession
-from app.db.schema import MessageRole
+from app.db.schema import MessageRole, EventType
+from app.services.audit_log_service import AuditLogService
 
 
 class MessageService:
     def __init__(self, session: Session):
         self._db = session
-
-    def validate_session_token(self, session_token: str) -> str:
-        session = self._db.execute(
-            select(ChatSession)
-            .where(ChatSession.session_token == session_token)
-            .where(ChatSession.expires_at > datetime.now(timezone.utc))
-        )
-        session = session.scalar_one_or_none()
-        return session
 
     def get_message(self, message_id: int) -> Message | None:
         result = self._db.scalars(select(Message).where(Message.id == message_id))
@@ -30,8 +20,7 @@ class MessageService:
         )
         return list(result)
 
-
-    def create_message(self, chat_session: ChatSession, content: str) -> Message:
+    def create_message(self, chat_session: ChatSession, content: str, audit_log_service: AuditLogService) -> Message:
         result = self._db.scalar(
             select(func.count(Message.id))
             .where(Message.session_id == chat_session.id)
@@ -49,6 +38,13 @@ class MessageService:
         self._db.add(message)
         self._db.commit()
         self._db.refresh(message)
+
+        audit_log_service.create_audit_log(
+            event_type=EventType.MESSAGE_SENT.name,
+            chat_session=chat_session,
+            entity_id=message.id,
+            payload=list(str(message))
+        )
 
         return message
 

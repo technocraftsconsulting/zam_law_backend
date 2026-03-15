@@ -4,6 +4,8 @@ from pydantic.v1 import BaseSettings, Field
 class AppSettings(BaseSettings):
     app_name: str = Field("Zambia Law", env="APP_NAME")
     environment: str = Field("dev", env="ENVIRONMENT")
+    upload_dir: str = Field(..., env="UPLOAD_DIR")
+    max_upload_size: int = Field(..., env="MAX_UPLOAD_SIZE")
 
     class Config:
         env_file = ".env"
@@ -24,6 +26,7 @@ class SessionSettings(BaseSettings):
     session_secret_key: str = Field(..., env="SESSION_SECRET_KEY")
     session_expiry_minutes: int = Field(60, env="SESSION_EXPIRY_MINUTES")
     cookie_name: str = Field(..., env="COOKIE_NAME")
+    algorithm: str = Field(..., env="ALGORITHM")
 
     class Config:
         env_file = ".env"
